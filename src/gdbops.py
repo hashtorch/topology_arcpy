@@ -170,11 +170,14 @@ def restore_gdb(flattened_gdb, output_gdb=None):
     if not original_structure:
         raise ValueError("No structure metadata found in flattened GDB")
 
-    # Determine output path
+    # Determine output path - always add _restored.gdb suffix
     if not output_gdb:
-        output_gdb = original_structure.gdb_path
-        if output_gdb == flattened_gdb:
-            output_gdb = flattened_gdb.replace('_flattened.gdb', '_restored.gdb')
+        # Remove .gdb extension and add _restored.gdb
+        if flattened_gdb.endswith('.gdb'):
+            base_name = flattened_gdb[:-4]  # Remove .gdb
+            output_gdb = base_name + '_restored.gdb'
+        else:
+            output_gdb = flattened_gdb + '_restored.gdb'
 
     logger.info("Restoring to: {}".format(output_gdb))
 
@@ -201,7 +204,7 @@ def restore_gdb(flattened_gdb, output_gdb=None):
                 fc_in_dataset = fc_list[0] if fc_list else None
 
                 if fc_in_dataset:
-                    fc_path = os.path.join('Infrastructure', fc_in_dataset)
+                    fc_path = os.path.join('TKMDS', fc_in_dataset)
                     spatial_ref = get_spatial_reference(fc_path)
                     create_dataset_if_not_exists(output_gdb, dataset_name, spatial_ref)
                 else:
@@ -210,7 +213,7 @@ def restore_gdb(flattened_gdb, output_gdb=None):
                 # Move feature classes to dataset
                 for fc_name in fc_list:
                     try:
-                        source_fc = os.path.join(flattened_gdb, 'Infrastructure', fc_name)
+                        source_fc = os.path.join(flattened_gdb, 'TKMDS', fc_name)
                         target_dataset = os.path.join(output_gdb, dataset_name)
 
                         # Get feature count
@@ -233,7 +236,7 @@ def restore_gdb(flattened_gdb, output_gdb=None):
     # Restore standalone feature classes
     for fc_name in original_structure.standalone_fcs:
         try:
-            source_fc = os.path.join(flattened_gdb, 'Infrastructure', fc_name)
+            source_fc = os.path.join(flattened_gdb, 'TKMDS', fc_name)
             target_fc = os.path.join(output_gdb, fc_name)
 
             # Get feature count

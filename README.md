@@ -88,6 +88,11 @@ destination_fc = "Parcels"
 topology_arcpy/
 ├── main.py              # Main entry point
 ├── topology.config.toml # Configuration file
+├── scripts/             # Utility and testing scripts
+│   ├── check_fcs.py          # Feature class comparison utility
+│   ├── test_copy_fcs.py      # Feature class copy testing
+│   ├── test_fresh_flatten.py # Fresh flatten operation testing
+│   └── list_datasets.py      # Dataset listing utility
 ├── src/                 # Source modules
 │   ├── cli.py          # CLI argument parsing
 │   ├── config.py       # Configuration management

@@ -150,22 +150,28 @@ def find_geometry_duplicates(fc_path):
     """
     duplicate_ids = []
 
-    # Create a temporary feature class for spatial comparison
-    temp_fc = create_temporary_fc(fc_path)
-    if not temp_fc:
-        logger.warning("Could not create temporary feature class for geometry comparison")
-        return []
-
     try:
-        # Use spatial join to find identical geometries
-        output_fc = os.path.join("memory", "spatial_join_results")
+        # Simple approach: compare geometries using JSON representation
+        seen_geometries = {}
+        with arcpy.da.SearchCursor(fc_path, ["OID@", "SHAPE@JSON"]) as cursor:
+            for row in cursor:
+                fid = row[0]
+                geometry_json = row[1]
 
-        # Perform spatial join with identical geometry
-        arcpy.SpatialJoin_analysis(fc_path, temp_fc, output_fc,
-                                   join_operation="JOIN_ONE_TO_ONE",
-                                   match_option="IDENTICAL_TO",
-                                   search_radius="0 Meters",
-                                   distance_field_name="")
+                if geometry_json in seen_geometries:
+                    # This is a duplicate
+                    duplicate_ids.append(fid)
+                    logger.debug("Found duplicate: OID {} matches OID {}".format(fid, seen_geometries[geometry_json]))
+                else:
+                    # First occurrence
+                    seen_geometries[geometry_json] = fid
+
+        logger.info("Found {} duplicates based on identical geometry".format(len(duplicate_ids)))
+        return duplicate_ids
+
+    except Exception as e:
+        logger.error("Error finding geometry duplicates: {}".format(str(e)))
+        return []
 
         # Find features that have matches (keep one, remove others)
         if arcpy.Exists(output_fc):
@@ -192,12 +198,6 @@ def find_geometry_duplicates(fc_path):
 
     except Exception as e:
         logger.error("Error finding geometry duplicates: {}".format(str(e)))
-    finally:
-        # Cleanup
-        if arcpy.Exists(output_fc):
-            arcpy.Delete_management(output_fc)
-        if temp_fc and arcpy.Exists(temp_fc):
-            arcpy.Delete_management(temp_fc)
 
     return duplicate_ids
 
@@ -267,15 +267,15 @@ def delete_features(fc_path, feature_ids):
         return 0
 
     try:
-        # Build WHERE clause
-        where_clause = "OID IN ({})".format(",".join(map(str, feature_ids)))
+        # Delete features one by one using update cursor
+        deleted_count = 0
+        with arcpy.da.UpdateCursor(fc_path, ["OID@"]) as cursor:
+            for row in cursor:
+                if row[0] in feature_ids:
+                    cursor.deleteRow()
+                    deleted_count += 1
 
-        # Delete features
-        arcpy.DeleteFeatures_management(fc_path, where_clause)
-
-        deleted_count = len(feature_ids)
         logger.debug("Deleted {} features".format(deleted_count))
-
         return deleted_count
 
     except Exception as e:

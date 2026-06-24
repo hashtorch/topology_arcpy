@@ -1,0 +1,27 @@
+# Topology Management System Configuration File
+# This file defines topology rules for geodatabase validation
+
+# Geodatabase path (use forward slashes for compatibility)
+gdb_path = "D:/GDBs/C44B13F20.gdb"
+
+# Feature dataset containing the feature classes
+dataset_name = "Infrastructure"
+
+# Name for the topology
+topology_name = "Landuse_Topology"
+
+# Rule 1: Parcels cannot overlap each other
+[[rules]]
+origin_fc = "Parcels"
+rule_type = "MUST_NOT_OVERLAP"
+
+# Rule 2: Parcels must not have slivers or gaps
+[[rules]]
+origin_fc = "Parcels"
+rule_type = "MUST_NOT_HAVE_GAPS"
+
+# Rule 3: Cross-layer rule (Buildings must sit inside Parcels)
+[[rules]]
+origin_fc = "Buildings"
+rule_type = "MUST_BE_INSIDE"
+destination_fc = "Parcels"

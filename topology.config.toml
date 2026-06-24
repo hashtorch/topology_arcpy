@@ -40,25 +40,24 @@ rule = "MUST_NOT_OVERLAP"
 # Polyline Feature Classes - Line Rules
 [[rules]]
 fc1 = "RoadCenterline"
-rule = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_HAVE_DANGLES"
+
+[[rules]]
+fc1 = "RoadCenterline"
+rule = "MUST_BE_SINGLE_PART"
 
 [[rules]]
 fc1 = "Powerline"
-rule = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_HAVE_DANGLES"
+
+[[rules]]
+fc1 = "Powerline"
+rule = "MUST_BE_SINGLE_PART"
 
 [[rules]]
 fc1 = "OtherLine"
-rule = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_HAVE_DANGLES"
 
 [[rules]]
 fc1 = "CompoundWall"
-rule = "MUST_NOT_OVERLAP"
-
-# Point Feature Classes - Point Rules
-[[rules]]
-fc1 = "ElectricPole"
-rule = "MUST_NOT_OVERLAP"
-
-[[rules]]
-fc1 = "WirelessStationMast"
-rule = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_HAVE_DANGLES"

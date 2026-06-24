@@ -262,7 +262,9 @@ def validate_rule(rule):
         'MUST_NOT_HAVE_GAPS',
         'MUST_BE_INSIDE',
         'MUST_BE_COVERED_BY',
-        'MUST_NOT_INTERSECT'
+        'MUST_NOT_INTERSECT',
+        'MUST_NOT_HAVE_DANGLES',
+        'MUST_BE_SINGLE_PART'
     ]
 
     if rule.rule_type not in valid_rule_types:

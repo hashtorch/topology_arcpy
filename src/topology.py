@@ -19,6 +19,8 @@ RULE_MUST_NOT_HAVE_GAPS = "MUST_NOT_HAVE_GAPS"
 RULE_MUST_BE_INSIDE = "MUST_BE_INSIDE"
 RULE_MUST_BE_COVERED_BY = "MUST_BE_COVERED_BY"
 RULE_MUST_NOT_INTERSECT = "MUST_NOT_INTERSECT"
+RULE_MUST_NOT_HAVE_DANGLES = "MUST_NOT_HAVE_DANGLES"
+RULE_MUST_BE_SINGLE_PART = "MUST_BE_SINGLE_PART"
 
 
 @handle_arcpy_error
@@ -149,6 +151,8 @@ def add_topology_rules(topology_path, rules):
         int: Number of rules added
     """
     added_count = 0
+    failed_count = 0
+    failed_rules = []
 
     for rule in rules:
         try:
@@ -157,8 +161,12 @@ def add_topology_rules(topology_path, rules):
             logger.info("Added rule: {} on {}".format(rule.rule_type, rule.origin_fc))
 
         except arcpy.ExecuteError as e:
-            logger.error("Error adding rule: {}".format(str(e)))
-            raise
+            failed_count += 1
+            failed_rules.append(rule.origin_fc)
+            logger.warning("Failed to add rule for {} ({}): {}".format(rule.origin_fc, rule.rule_type, str(e)))
+
+    if failed_count > 0:
+        logger.warning("Failed to add {}/{} rules. Failed feature classes: {}".format(failed_count, len(rules), failed_rules))
 
     return added_count
 
@@ -195,6 +203,12 @@ def add_rule(topology_path, rule):
 
     elif rule.rule_type == RULE_MUST_NOT_INTERSECT:
         arcpy.AddRuleToTopology_management(topology_path, "Must Not Intersect (Line)", origin_fc)
+
+    elif rule.rule_type == RULE_MUST_NOT_HAVE_DANGLES:
+        arcpy.AddRuleToTopology_management(topology_path, "Must Not Have Dangles (Line)", origin_fc)
+
+    elif rule.rule_type == RULE_MUST_BE_SINGLE_PART:
+        arcpy.AddRuleToTopology_management(topology_path, "Must Be Single Part (Line)", origin_fc)
 
     else:
         raise ValueError("Unknown rule type: {}".format(rule.rule_type))

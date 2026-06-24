@@ -153,15 +153,17 @@ def parse_config_dict(config_dict):
     dataset_name = config_dict.get('dataset_name')
     topology_name = config_dict.get('topology_name')
 
+    # gdb_path is optional - will be taken from command line if not in config
     if not gdb_path:
-        raise ValueError("Missing required field: gdb_path")
+        gdb_path = None
+    else:
+        # Normalize path separators
+        gdb_path = gdb_path.replace('/', '\\')
+
     if not dataset_name:
         raise ValueError("Missing required field: dataset_name")
     if not topology_name:
         raise ValueError("Missing required field: topology_name")
-
-    # Normalize path separators
-    gdb_path = gdb_path.replace('/', '\\')
 
     # Parse rules
     rules = []
@@ -191,19 +193,20 @@ def parse_rule_dict(rule_dict):
     Returns:
         TopologyRule: Parsed rule object
     """
-    origin_fc = rule_dict.get('origin_fc')
+    # Support both old and new parameter names
+    fc1 = rule_dict.get('fc1') or rule_dict.get('origin_fc')
     rule_type = rule_dict.get('rule_type')
-    destination_fc = rule_dict.get('destination_fc')
+    fc2 = rule_dict.get('fc2') or rule_dict.get('destination_fc')
 
-    if not origin_fc:
-        raise ValueError("Rule missing required field: origin_fc")
+    if not fc1:
+        raise ValueError("Rule missing required field: fc1 (origin_fc)")
     if not rule_type:
         raise ValueError("Rule missing required field: rule_type")
 
     return TopologyRule(
-        origin_fc=origin_fc,
+        origin_fc=fc1,
         rule_type=rule_type,
-        destination_fc=destination_fc
+        destination_fc=fc2
     )
 
 
@@ -220,8 +223,8 @@ def validate_config(config):
     Raises:
         ValueError: If configuration is invalid
     """
-    # Validate GDB path format
-    if not config.gdb_path.endswith('.gdb'):
+    # Validate GDB path format (if provided in config)
+    if config.gdb_path and not config.gdb_path.endswith('.gdb'):
         raise ValueError("gdb_path must end with .gdb: {}".format(config.gdb_path))
 
     # Validate dataset name

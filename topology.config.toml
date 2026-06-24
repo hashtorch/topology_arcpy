@@ -4,15 +4,45 @@
 dataset_name = "TKMDS"
 topology_name = "tkm_topology"
 
+# Building Footprint Rules
 [[rules]]
-origin_fc = "BuildingFootprint"
+fc1 = "BuildingFootprint"
 rule_type = "MUST_NOT_OVERLAP"
 
 [[rules]]
-origin_fc = "BuildingFootprint"
+fc1 = "BuildingFootprint"
 rule_type = "MUST_NOT_HAVE_GAPS"
 
+# Tower Rules
 [[rules]]
-origin_fc = "Tower"
+fc1 = "Tower"
 rule_type = "MUST_BE_INSIDE"
-destination_fc = "BuildingFootprint"
+fc2 = "BuildingFootprint"
+
+# Waterbody Rules
+[[rules]]
+fc1 = "Waterbody"
+rule_type = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "Waterbody"
+rule_type = "MUST_NOT_HAVE_GAPS"
+
+# Road Rules
+[[rules]]
+fc1 = "RoadCenterline"
+rule_type = "MUST_NOT_OVERLAP"
+
+# Canal Rules
+[[rules]]
+fc1 = "Canal"
+rule_type = "MUST_NOT_OVERLAP"
+
+# Land Cover Rules
+[[rules]]
+fc1 = "BuiltUp"
+rule_type = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "BuiltUp"
+rule_type = "MUST_NOT_HAVE_GAPS"

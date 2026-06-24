@@ -4,45 +4,61 @@
 dataset_name = "TKMDS"
 topology_name = "tkm_topology"
 
-# Building Footprint Rules
+# Polygon Feature Classes - Area Rules
 [[rules]]
 fc1 = "BuildingFootprint"
-rule_type = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-fc1 = "BuildingFootprint"
-rule_type = "MUST_NOT_HAVE_GAPS"
-
-# Tower Rules
-[[rules]]
-fc1 = "Tower"
-rule_type = "MUST_BE_INSIDE"
-fc2 = "BuildingFootprint"
-
-# Waterbody Rules
-[[rules]]
-fc1 = "Waterbody"
-rule_type = "MUST_NOT_OVERLAP"
+fc1 = "BuiltUp"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-fc1 = "Waterbody"
-rule_type = "MUST_NOT_HAVE_GAPS"
+fc1 = "Cultivation"
+rule = "MUST_NOT_OVERLAP"
 
-# Road Rules
+[[rules]]
+fc1 = "Plantation"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "WaterCourseArea"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "WardBoundary"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP"
+
+# Polyline Feature Classes - Line Rules
 [[rules]]
 fc1 = "RoadCenterline"
-rule_type = "MUST_NOT_OVERLAP"
-
-# Canal Rules
-[[rules]]
-fc1 = "Canal"
-rule_type = "MUST_NOT_OVERLAP"
-
-# Land Cover Rules
-[[rules]]
-fc1 = "BuiltUp"
-rule_type = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-fc1 = "BuiltUp"
-rule_type = "MUST_NOT_HAVE_GAPS"
+fc1 = "Powerline"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "OtherLine"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "CompoundWall"
+rule = "MUST_NOT_OVERLAP"
+
+# Point Feature Classes - Point Rules
+[[rules]]
+fc1 = "ElectricPole"
+rule = "MUST_NOT_OVERLAP"
+
+[[rules]]
+fc1 = "WirelessStationMast"
+rule = "MUST_NOT_OVERLAP"

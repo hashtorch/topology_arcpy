@@ -195,13 +195,13 @@ def parse_rule_dict(rule_dict):
     """
     # Support both old and new parameter names
     fc1 = rule_dict.get('fc1') or rule_dict.get('origin_fc')
-    rule_type = rule_dict.get('rule_type')
+    rule_type = rule_dict.get('rule') or rule_dict.get('rule_type')
     fc2 = rule_dict.get('fc2') or rule_dict.get('destination_fc')
 
     if not fc1:
         raise ValueError("Rule missing required field: fc1 (origin_fc)")
     if not rule_type:
-        raise ValueError("Rule missing required field: rule_type")
+        raise ValueError("Rule missing required field: rule (rule_type)")
 
     return TopologyRule(
         origin_fc=fc1,

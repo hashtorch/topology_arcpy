@@ -5,9 +5,9 @@ A command-line tool for managing ArcGIS Desktop geodatabase topology operations 
 ## Features
 
 - **Flatten**: Consolidate all feature classes from multiple datasets into a single dataset
-- **Restore**: Restore original geodatabase structure from a flattened GDB
-- **Validate**: Create and validate topology rules from configuration files
 - **Dedupe**: Remove duplicate features from geodatabases
+- **Validate**: Create and validate topology rules from configuration files
+- **Restore**: Restore original geodatabase structure from a flattened GDB
 
 ## Requirements
 
@@ -26,25 +26,25 @@ A command-line tool for managing ArcGIS Desktop geodatabase topology operations 
 ### Basic Commands
 
 ```bash
-# Flatten GDB structure
+# Step 1: Flatten GDB structure
 python main.py flatten --gdb input.gdb --output input_flattened.gdb
 
-# Restore original structure
+# Step 2: Remove duplicate features from flattened GDB
+python main.py dedupe --gdb input_flattened.gdb --dataset TKMDS
+python main.py dedupe --gdb input_flattened.gdb --feature-class BuildingFootprint --report-only
+
+# Step 3: Create and validate topology on cleaned data
+python main.py validate --gdb input_flattened.gdb --config topology.config.toml
+
+# Step 4: Restore original structure from cleaned, validated data
 python main.py restore --gdb input_flattened.gdb
-
-# Create and validate topology
-python main.py validate --gdb input.gdb --config topology.config.toml
-
-# Remove duplicate features
-python main.py dedupe --gdb input.gdb --dataset Infrastructure
-python main.py dedupe --gdb input.gdb --feature-class Parcels --report-only
 ```
 
 ### Command Options
 
 - `--gdb PATH`: Input geodatabase path
 - `--output PATH`: Output geodatabase path (for flatten command)
-- `--dataset NAME`: Dataset name (default: Infrastructure)
+- `--dataset NAME`: Dataset name (default: TKMDS)
 - `--config PATH`: Configuration file path (default: topology.config.toml)
 - `--feature-class`: Specific feature class to process (for dedupe command)
 - `--fields`: Comma-separated list of fields to check for duplicates (for dedupe command)
@@ -101,41 +101,63 @@ topology_arcpy/
 
 ## Examples
 
-### Flatten a Geodatabase
+### Complete Workflow (Recommended Order)
+
+```bash
+# Step 1: Flatten GDB structure
+C:\Python27\ArcGIS10.8\python.exe main.py flatten --gdb D:\GDBs\C44B13F20.gdb
+
+# Step 2: Remove duplicates from flattened GDB
+C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flattened.gdb --dataset TKMDS
+
+# Step 3: Create and validate topology on cleaned data
+C:\Python27\ArcGIS10.8\python.exe main.py validate --gdb D:\GDBs\C44B13F20_flattened.gdb
+
+# Step 4: Restore original structure with cleaned, validated data
+C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb
+```
+
+### Individual Commands
+
+#### Flatten a Geodatabase
 
 ```bash
 C:\Python27\ArcGIS10.8\python.exe main.py flatten --gdb D:\GDBs\C44B13F20.gdb
 ```
 
-This creates `C44B13F20_flattened.gdb` with all feature classes in the "Infrastructure" dataset.
+This creates `C44B13F20_flattened.gdb` with all 165 feature classes in the "TKMDS" dataset.
 
-### Restore Original Structure
+#### Remove Duplicate Features
+
+```bash
+# Remove duplicates from all feature classes in TKMDS dataset
+C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flattened.gdb --dataset TKMDS
+
+# Remove duplicates from a specific feature class
+C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flattened.gdb --feature-class BuildingFootprint
+
+# Report duplicates without removing them (safe preview)
+C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flattened.gdb --feature-class Tower --report-only
+
+# Remove duplicates based on attribute fields instead of geometry
+C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flattened.gdb --feature-class Canal --fields "NAME,TYPE"
+```
+
+#### Validate Topology
+
+```bash
+C:\Python27\ArcGIS10.8\python.exe main.py validate --gdb D:\GDBs\C44B13F20_flattened.gdb
+```
+
+This creates topology rules from the configuration and validates them against the cleaned data.
+
+#### Restore Original Structure
 
 ```bash
 C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb
 ```
 
-This restores the original geodatabase structure.
-
-### Validate Topology
-
-```bash
-C:\Python27\ArcGIS10.8\python.exe main.py validate --gdb D:\GDBs\C44B13F20.gdb
-```
-
-This creates topology rules from the configuration and validates them.
-
-### Remove Duplicate Features
-
-```bash
-# Remove duplicates from all feature classes in a dataset
-C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20.gdb --dataset Infrastructure
-
-# Remove duplicates from a specific feature class
-C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20.gdb --feature-class Parcels
-
-# Report duplicates without removing them
-C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20.gdb --feature-class Parcels --report-only
+This restores the original geodatabase structure with the cleaned and validated data.
 
 # Remove duplicates based on specific attribute fields
 C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20.gdb --feature-class Parcels --fields "PARCEL_ID,OWNER"

@@ -10,7 +10,7 @@ gdb_path = "D:/GDBs/C44B13F20_flattened.gdb"
 dataset_name = "TKMDS"
 
 # Name for the topology
-topology_name = "twokds"
+topology_name = "tkm_topology"
 
 # Rule 1: BuildingFootprint features cannot overlap each other
 [[rules]]

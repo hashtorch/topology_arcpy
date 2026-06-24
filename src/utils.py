@@ -222,7 +222,7 @@ def list_featureclasses(gdb_path):
         # Add standalone feature classes
         arcpy.env.workspace = gdb_path
         standalone_fcs = arcpy.ListFeatureClasses()
-        fcs.extend(standandalone_fcs)
+        fcs.extend(standalone_fcs)
 
         logger.info("Found {} feature classes".format(len(fcs)))
         return fcs

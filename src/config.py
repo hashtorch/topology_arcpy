@@ -110,23 +110,25 @@ def parse_simple_toml(config_path):
             if not line or line.startswith('#'):
                 continue
 
-            # Handle key-value pairs
-            if '=' in line and not line.startswith('[['):
-                key, value = line.split('=', 1)
-                key = key.strip()
-                value = value.strip().strip('"').strip("'")
-
-                if in_rules_section and current_rule:
-                    current_rule[key] = value
-                else:
-                    config[key] = value
-
-            # Handle rules array start
-            elif line.startswith('[[') and line.endswith(']]'):
+            # Handle rules array start/end
+            if line.startswith('[[') and line.endswith(']]'):
+                # Save previous rule if exists
                 if current_rule:
                     rules.append(current_rule)
                     current_rule = {}
                 in_rules_section = True
+                continue
+
+            # Handle key-value pairs
+            if '=' in line:
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+
+                if in_rules_section:
+                    current_rule[key] = value
+                else:
+                    config[key] = value
 
         # Add last rule
         if current_rule:

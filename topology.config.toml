@@ -1,27 +1,40 @@
 # Topology Management System Configuration File
 # This file defines topology rules for geodatabase validation
+# IMPORTANT: This config is designed for the FLATTENED GDB where all feature
+# classes are consolidated into a single "Infrastructure" dataset
 
-# Geodatabase path (use forward slashes for compatibility)
-gdb_path = "D:/GDBs/C44B13F20.gdb"
+# Geodatabase path (pointing to flattened GDB for validation)
+gdb_path = "D:/GDBs/C44B13F20_flattened.gdb"
 
-# Feature dataset containing the feature classes
-dataset_name = "Infrastructure"
+# Feature dataset containing the feature classes (created by flatten command)
+dataset_name = "TKMDS"
 
 # Name for the topology
-topology_name = "Landuse_Topology"
+topology_name = "twokds"
 
-# Rule 1: Parcels cannot overlap each other
+# Rule 1: BuildingFootprint features cannot overlap each other
 [[rules]]
-origin_fc = "Parcels"
+origin_fc = "BuildingFootprint"
 rule_type = "MUST_NOT_OVERLAP"
 
-# Rule 2: Parcels must not have slivers or gaps
+# Rule 2: BuildingFootprint must not have gaps
 [[rules]]
-origin_fc = "Parcels"
+origin_fc = "BuildingFootprint"
 rule_type = "MUST_NOT_HAVE_GAPS"
 
-# Rule 3: Cross-layer rule (Buildings must sit inside Parcels)
+# Rule 3: Cross-layer rule (Tower must be inside BuildingFootprint)
 [[rules]]
-origin_fc = "Buildings"
+origin_fc = "Tower"
 rule_type = "MUST_BE_INSIDE"
-destination_fc = "Parcels"
+destination_fc = "BuildingFootprint"
+
+# Additional rule examples for other feature classes:
+# Rule 4: Road features cannot overlap
+# [[rules]]
+# origin_fc = "RoadCenterline"
+# rule_type = "MUST_NOT_OVERLAP"
+#
+# Rule 5: Waterbodies must not have gaps
+# [[rules]]
+# origin_fc = "Waterbody"
+# rule_type = "MUST_NOT_HAVE_GAPS"

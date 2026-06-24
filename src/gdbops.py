@@ -93,19 +93,51 @@ def flatten_gdb(input_gdb, output_gdb, dataset_name="Infrastructure"):
 
     # Move all feature classes to target dataset
     moved_count = 0
+    failed_count = 0
+    empty_count = 0
+    total_features = 0
+    failed_fcs = []
+
     for fc_info in all_fcs:
         try:
             fc_path = os.path.join(input_gdb, fc_info)
             fc_name = os.path.basename(fc_info)
             target_fc = os.path.join(target_dataset, fc_name)
 
-            logger.info("Moving feature class: {}".format(fc_info))
+            # Check if feature class is empty
+            fc_count = int(arcpy.GetCount_management(fc_path).getOutput(0))
+            total_features += fc_count
+
+            if fc_count == 0:
+                empty_count += 1
+                logger.debug("Empty feature class: {}".format(fc_info))
+
+            logger.info("Moving feature class: {} ({} features)".format(fc_info, fc_count))
             arcpy.FeatureClassToFeatureClass_conversion(fc_path, target_dataset, fc_name)
             moved_count += 1
 
         except arcpy.ExecuteError as e:
+            failed_count += 1
+            failed_fcs.append(fc_info)
             logger.error("Error moving feature class {}: {}".format(fc_info, str(e)))
-            raise
+
+    # Print comprehensive summary
+    print("\n" + "="*50)
+    print("FLATTEN OPERATION SUMMARY")
+    print("="*50)
+    print("Original datasets: {}".format(len(original_structure.datasets)))
+    print("Total feature classes found: {}".format(len(all_fcs)))
+    print("Successfully moved: {}".format(moved_count))
+    print("Failed: {}".format(failed_count))
+    print("Empty feature classes: {}".format(empty_count))
+    print("Total features copied: {}".format(total_features))
+
+    if failed_count > 0:
+        print("\nFailed feature classes:")
+        for failed_fc in failed_fcs:
+            print("  - {}".format(failed_fc))
+
+    print("="*50)
 
     logger.info("Flatten complete. Moved {} feature classes to {}".format(moved_count, dataset_name))
 
@@ -155,6 +187,9 @@ def restore_gdb(flattened_gdb, output_gdb=None):
     total_fcs += len(original_structure.standalone_fcs)
 
     restored_count = 0
+    failed_count = 0
+    total_features = 0
+    failed_fcs = []
 
     # Restore datasets and their feature classes
     for dataset_name, fc_list in original_structure.datasets.items():
@@ -174,12 +209,22 @@ def restore_gdb(flattened_gdb, output_gdb=None):
 
                 # Move feature classes to dataset
                 for fc_name in fc_list:
-                    source_fc = os.path.join(flattened_gdb, 'Infrastructure', fc_name)
-                    target_dataset = os.path.join(output_gdb, dataset_name)
+                    try:
+                        source_fc = os.path.join(flattened_gdb, 'Infrastructure', fc_name)
+                        target_dataset = os.path.join(output_gdb, dataset_name)
 
-                    logger.info("Restoring feature class: {} to {}".format(fc_name, dataset_name))
-                    arcpy.FeatureClassToFeatureClass_conversion(source_fc, target_dataset, fc_name)
-                    restored_count += 1
+                        # Get feature count
+                        fc_count = int(arcpy.GetCount_management(source_fc).getOutput(0))
+                        total_features += fc_count
+
+                        logger.info("Restoring feature class: {} to {} ({} features)".format(fc_name, dataset_name, fc_count))
+                        arcpy.FeatureClassToFeatureClass_conversion(source_fc, target_dataset, fc_name)
+                        restored_count += 1
+
+                    except arcpy.ExecuteError as e:
+                        failed_count += 1
+                        failed_fcs.append(dataset_name + '\\' + fc_name)
+                        logger.error("Error restoring feature class {}: {}".format(fc_name, str(e)))
 
             except arcpy.ExecuteError as e:
                 logger.error("Error restoring dataset {}: {}".format(dataset_name, str(e)))
@@ -191,13 +236,35 @@ def restore_gdb(flattened_gdb, output_gdb=None):
             source_fc = os.path.join(flattened_gdb, 'Infrastructure', fc_name)
             target_fc = os.path.join(output_gdb, fc_name)
 
-            logger.info("Restoring standalone feature class: {}".format(fc_name))
+            # Get feature count
+            fc_count = int(arcpy.GetCount_management(source_fc).getOutput(0))
+            total_features += fc_count
+
+            logger.info("Restoring standalone feature class: {} ({} features)".format(fc_name, fc_count))
             arcpy.FeatureClassToFeatureClass_conversion(source_fc, output_gdb, fc_name)
             restored_count += 1
 
         except arcpy.ExecuteError as e:
+            failed_count += 1
+            failed_fcs.append(fc_name)
             logger.error("Error restoring feature class {}: {}".format(fc_name, str(e)))
-            raise
+
+    # Print comprehensive summary
+    print("\n" + "="*50)
+    print("RESTORE OPERATION SUMMARY")
+    print("="*50)
+    print("Datasets to restore: {}".format(len(original_structure.datasets)))
+    print("Total feature classes to restore: {}".format(total_fcs))
+    print("Successfully restored: {}".format(restored_count))
+    print("Failed: {}".format(failed_count))
+    print("Total features restored: {}".format(total_features))
+
+    if failed_count > 0:
+        print("\nFailed feature classes:")
+        for failed_fc in failed_fcs:
+            print("  - {}".format(failed_fc))
+
+    print("="*50)
 
     logger.info("Restore complete. Restored {} feature classes".format(restored_count))
     return output_gdb
@@ -250,8 +317,9 @@ def create_output_gdb(input_gdb, output_gdb):
         output_gdb: Path to output GDB to create
     """
     if arcpy.Exists(output_gdb):
-        logger.warning("Output GDB already exists, deleting: {}".format(output_gdb))
-        arcpy.Delete_management(output_gdb)
+        error_msg = "Output GDB already exists: {}\nPlease manually delete the existing file before proceeding.".format(output_gdb)
+        logger.error(error_msg)
+        raise ValueError(error_msg)
 
     # Get folder path
     output_folder = os.path.dirname(output_gdb)

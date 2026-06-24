@@ -13,7 +13,7 @@ from src.logger import get_logger, setup_logging
 from src.cli import parse_command_line
 from src.config import load_config, validate_config
 from src.gdbops import flatten_gdb, restore_gdb
-from src.topology import create_topology, validate_topology
+from src.topology import create_topology
 from src.dedupe import remove_duplicates, report_duplicates
 from src.utils import check_arcgis_license
 
@@ -131,12 +131,11 @@ def handle_validate(args):
     logger.info("Topology: {}".format(config.topology_name))
     logger.info("Rules: {}".format(len(config.rules)))
 
-    # Execute topology validation
-    results = validate_topology(config)
+    # Execute topology creation and validation
+    topology_path = create_topology(config)
 
-    logger.info("Validation completed successfully")
-    if 'total' in results:
-        logger.info("Topology errors found: {}".format(results['total']))
+    logger.info("Topology creation and validation completed successfully")
+    logger.info("Topology created at: {}".format(topology_path))
 
     return 0
 

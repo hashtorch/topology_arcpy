@@ -55,8 +55,8 @@ Examples:
 
     parser.add_argument(
         '--dataset',
-        default='Infrastructure',
-        help='Dataset name for topology operations (default: Infrastructure)'
+        default='TKMDS',
+        help='Dataset name for topology operations (default: TKMDS)'
     )
 
     parser.add_argument(

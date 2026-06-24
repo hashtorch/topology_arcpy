@@ -45,6 +45,8 @@ if exist "C:\Program Files (x86)\Git\cmd" set PATH=%PATH%;C:\Program Files (x86)
 
 echo | set /p="Python Version: "
 python --version
+echo | set /p="Python Path: "
+echo %ARCGIS_PYTHON%\python.exe
 echo | set /p="ArcPy Status: "
 python -c "import arcpy; print('Available - Version:', arcpy.GetInstallInfo()['Version'])" 2>nul || echo Not available
 echo Environment Ready!

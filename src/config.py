@@ -259,6 +259,7 @@ def validate_rule(rule):
     # Valid rule types
     valid_rule_types = [
         'MUST_NOT_OVERLAP',
+        'MUST_NOT_OVERLAP_WITH',
         'MUST_NOT_HAVE_GAPS',
         'MUST_BE_INSIDE',
         'MUST_BE_COVERED_BY',

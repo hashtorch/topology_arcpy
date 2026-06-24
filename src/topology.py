@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 
 # Topology rule constants
 RULE_MUST_NOT_OVERLAP = "MUST_NOT_OVERLAP"
+RULE_MUST_NOT_OVERLAP_WITH = "MUST_NOT_OVERLAP_WITH"
 RULE_MUST_NOT_HAVE_GAPS = "MUST_NOT_HAVE_GAPS"
 RULE_MUST_BE_INSIDE = "MUST_BE_INSIDE"
 RULE_MUST_BE_COVERED_BY = "MUST_BE_COVERED_BY"
@@ -209,6 +210,12 @@ def add_rule(topology_path, rule):
 
     elif rule.rule_type == RULE_MUST_BE_SINGLE_PART:
         arcpy.AddRuleToTopology_management(topology_path, "Must Be Single Part (Line)", origin_fc)
+
+    elif rule.rule_type == RULE_MUST_NOT_OVERLAP_WITH:
+        if not rule.destination_fc:
+            raise ValueError("MUST_NOT_OVERLAP_WITH rule requires destination_fc")
+        destination_fc = os.path.join(dataset_path, rule.destination_fc)
+        arcpy.AddRuleToTopology_management(topology_path, "Must Not Overlap With (Area-Area)", origin_fc, destination_fc)
 
     else:
         raise ValueError("Unknown rule type: {}".format(rule.rule_type))

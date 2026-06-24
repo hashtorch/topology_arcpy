@@ -4,21 +4,9 @@
 dataset_name = "TKMDS"
 topology_name = "tkm_topology"
 
-# Polygon Feature Classes - Area Rules
+# Mandatory Topology Rules - Single Layer Rules
 [[rules]]
-fc1 = "BuildingFootprint"
-rule = "MUST_NOT_OVERLAP"
-
-[[rules]]
-fc1 = "BuiltUp"
-rule = "MUST_NOT_OVERLAP"
-
-[[rules]]
-fc1 = "Cultivation"
-rule = "MUST_NOT_OVERLAP"
-
-[[rules]]
-fc1 = "Plantation"
+fc1 = "RoadCarriageway"
 rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
@@ -26,18 +14,66 @@ fc1 = "Woodland"
 rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-fc1 = "WaterCourseArea"
+fc1 = "BuildingFootprint"
 rule = "MUST_NOT_OVERLAP"
 
+# Mandatory Cross-Layer Rules - Logical Spatial Relationships
 [[rules]]
-fc1 = "WardBoundary"
-rule = "MUST_NOT_OVERLAP"
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "Cultivation"
+
+[[rules]]
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "Plantation"
+
+[[rules]]
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "BuiltUp"
 
 [[rules]]
 fc1 = "RoadCarriageway"
-rule = "MUST_NOT_OVERLAP"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadDivider"
 
-# Polyline Feature Classes - Line Rules
+[[rules]]
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadIsland"
+
+[[rules]]
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadMedian"
+
+[[rules]]
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadRotary"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "BuiltUp"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "Cultivation"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "Plantation"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadCarriageway"
+
+# Additional Quality Rules - Line Rules
 [[rules]]
 fc1 = "RoadCenterline"
 rule = "MUST_NOT_HAVE_DANGLES"

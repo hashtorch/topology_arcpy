@@ -56,31 +56,88 @@ python main.py restore --gdb input_flattened.gdb
 The system uses TOML configuration files to define topology rules:
 
 ```toml
-gdb_path = "D:/GDBs/C44B13F20.gdb"
-dataset_name = "Infrastructure"
-topology_name = "Landuse_Topology"
+dataset_name = "TKMDS"
+topology_name = "tkm_topology"
+
+# Mandatory RoadCarriageway Rules
+[[rules]]
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-origin_fc = "Parcels"
-rule_type = "MUST_NOT_OVERLAP"
+fc1 = "RoadCarriageway"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "RoadDivider"
+
+# Mandatory Woodland Rules
+[[rules]]
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-origin_fc = "Parcels"
-rule_type = "MUST_NOT_HAVE_GAPS"
+fc1 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "Cultivation"
+
+# Mandatory BuildingFootprint Rules
+[[rules]]
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP"
 
 [[rules]]
-origin_fc = "Buildings"
-rule_type = "MUST_BE_INSIDE"
-destination_fc = "Parcels"
+fc1 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+fc2 = "BuiltUp"
+
+# Additional Quality Rules
+[[rules]]
+fc1 = "RoadCenterline"
+rule = "MUST_NOT_HAVE_DANGLES"
+
+[[rules]]
+fc1 = "Powerline"
+rule = "MUST_NOT_HAVE_DANGLES"
 ```
 
 ### Supported Rule Types
 
-- `MUST_NOT_OVERLAP`: Features cannot overlap
-- `MUST_NOT_HAVE_GAPS`: No gaps between features
-- `MUST_BE_INSIDE`: Features must be inside another feature class
+**Single-Layer Rules:**
+- `MUST_NOT_OVERLAP`: Features cannot overlap within the same feature class
+- `MUST_NOT_HAVE_GAPS`: No gaps between features (polygon only)
+- `MUST_NOT_HAVE_DANGLES`: Lines must not have dangling endpoints
+- `MUST_BE_SINGLE_PART`: Lines must be single part (no multipart features)
+
+**Cross-Layer Rules (require fc2):**
+- `MUST_NOT_OVERLAP_WITH`: Features in fc1 must not overlap with features in fc2
 - `MUST_BE_COVERED_BY`: Features must be covered by another feature class
+- `MUST_BE_INSIDE`: Features must be inside another feature class
 - `MUST_NOT_INTERSECT`: Features cannot intersect
+
+### Mandatory Topology Rules
+
+The system includes mandatory topology rules that must be present for data quality validation:
+
+**RoadCarriageway Rules:**
+- RoadCarriageway → MUST_NOT_OVERLAP (single layer)
+- RoadCarriageway → MUST_NOT_OVERLAP_WITH RoadDivider (cross-layer)
+- RoadCarriageway → MUST_NOT_OVERLAP_WITH RoadIsland (cross-layer)
+- RoadCarriageway → MUST_NOT_OVERLAP_WITH RoadMedian (cross-layer)
+- RoadCarriageway → MUST_NOT_OVERLAP_WITH RoadRotary (cross-layer)
+
+**Woodland Rules:**
+- Woodland → MUST_NOT_OVERLAP (single layer)
+- Woodland → MUST_NOT_OVERLAP_WITH Cultivation (cross-layer)
+- Woodland → MUST_NOT_OVERLAP_WITH Plantation (cross-layer)
+- Woodland → MUST_NOT_OVERLAP_WITH BuiltUp (cross-layer)
+
+**BuildingFootprint Rules:**
+- BuildingFootprint → MUST_NOT_OVERLAP (single layer)
+- BuildingFootprint → MUST_NOT_OVERLAP_WITH BuiltUp (cross-layer)
+- BuildingFootprint → MUST_NOT_OVERLAP_WITH Cultivation (cross-layer)
+- BuildingFootprint → MUST_NOT_OVERLAP_WITH Plantation (cross-layer)
+- BuildingFootprint → MUST_NOT_OVERLAP_WITH RoadCarriageway (cross-layer)
+
+These rules ensure logical spatial relationships between related feature classes and maintain data quality standards.
 
 ## Project Structure
 

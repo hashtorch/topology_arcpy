@@ -1,6 +1,6 @@
 # Topology Management System Configuration File
 # This file defines topology rules for geodatabase validation
-gdb_path = "D:/GDBs/C44B13F20_flattened.gdb"
+
 dataset_name = "TKMDS"
 topology_name = "tkm_topology"
 

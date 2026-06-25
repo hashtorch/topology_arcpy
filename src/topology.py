@@ -153,7 +153,9 @@ def add_topology_rules(topology_path, rules):
     """
     added_count = 0
     failed_count = 0
+    skipped_count = 0
     failed_rules = []
+    skipped_rules = []
 
     for rule in rules:
         try:
@@ -161,13 +163,24 @@ def add_topology_rules(topology_path, rules):
             added_count += 1
             logger.info("Added rule: {} on {}".format(rule.rule_type, rule.origin_fc))
 
+        except ValueError as e:
+            # Feature class doesn't exist, skip this rule
+            skipped_count += 1
+            skipped_rules.append("{} ({})".format(rule.origin_fc, rule.rule_type))
+            logger.info("Skipped rule for {} ({}): {}".format(rule.origin_fc, rule.rule_type, str(e)))
+
         except arcpy.ExecuteError as e:
             failed_count += 1
-            failed_rules.append(rule.origin_fc)
+            failed_rules.append("{} ({})".format(rule.origin_fc, rule.rule_type))
             logger.warning("Failed to add rule for {} ({}): {}".format(rule.origin_fc, rule.rule_type, str(e)))
 
+    if skipped_count > 0:
+        logger.info("Skipped {}/{} rules due to missing feature classes: {}".format(skipped_count, len(rules), skipped_rules))
+
     if failed_count > 0:
-        logger.warning("Failed to add {}/{} rules. Failed feature classes: {}".format(failed_count, len(rules), failed_rules))
+        logger.warning("Failed to add {}/{} rules. Failed rules: {}".format(failed_count, len(rules), failed_rules))
+
+    logger.info("Topology rule summary: {} added, {} skipped, {} failed".format(added_count, skipped_count, failed_count))
 
     return added_count
 
@@ -183,6 +196,19 @@ def add_rule(topology_path, rule):
     # Get feature class paths
     dataset_path = os.path.dirname(topology_path)
     origin_fc = os.path.join(dataset_path, rule.origin_fc)
+
+    # Check if origin feature class exists
+    if not arcpy.Exists(origin_fc):
+        logger.warning("Skipping rule for {} (feature class does not exist)".format(rule.origin_fc))
+        raise ValueError("Feature class {} does not exist".format(rule.origin_fc))
+
+    # For cross-layer rules, check if destination feature class exists
+    if rule.destination_fc:
+        destination_fc = os.path.join(dataset_path, rule.destination_fc)
+        if not arcpy.Exists(destination_fc):
+            logger.warning("Skipping cross-layer rule {} -> {} (destination feature class does not exist)".format(
+                rule.origin_fc, rule.destination_fc))
+            raise ValueError("Destination feature class {} does not exist".format(rule.destination_fc))
 
     if rule.rule_type == RULE_MUST_NOT_OVERLAP:
         arcpy.AddRuleToTopology_management(topology_path, "Must Not Overlap (Area)", origin_fc)
@@ -264,11 +290,12 @@ def get_topology_error_counts(topology_path):
     # Get topology as a feature class to access error features
     try:
         # Export topology errors
-        error_fc = os.path.join(os.path.dirname(topology_path), "_topology_errors")
+        error_fc_name = "topology_errors"
+        error_fc = os.path.join(os.path.dirname(topology_path), error_fc_name)
         if arcpy.Exists(error_fc):
             arcpy.Delete_management(error_fc)
 
-        arcpy.ExportTopologyErrors_management(topology_path, os.path.dirname(topology_path), error_fc)
+        arcpy.ExportTopologyErrors_management(topology_path, os.path.dirname(topology_path), error_fc_name)
 
         # Count errors
         if arcpy.Exists(error_fc):

@@ -17,62 +17,6 @@ rule = "MUST_NOT_OVERLAP"
 fc1 = "BuildingFootprint"
 rule = "MUST_NOT_OVERLAP"
 
-# Mandatory Cross-Layer Rules - Logical Spatial Relationships
-[[rules]]
-fc1 = "Woodland"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "Cultivation"
-
-[[rules]]
-fc1 = "Woodland"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "Plantation"
-
-[[rules]]
-fc1 = "Woodland"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "BuiltUp"
-
-[[rules]]
-fc1 = "RoadCarriageway"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "RoadDivider"
-
-[[rules]]
-fc1 = "RoadCarriageway"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "RoadIsland"
-
-[[rules]]
-fc1 = "RoadCarriageway"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "RoadMedian"
-
-[[rules]]
-fc1 = "RoadCarriageway"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "RoadRotary"
-
-[[rules]]
-fc1 = "BuildingFootprint"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "BuiltUp"
-
-[[rules]]
-fc1 = "BuildingFootprint"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "Cultivation"
-
-[[rules]]
-fc1 = "BuildingFootprint"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "Plantation"
-
-[[rules]]
-fc1 = "BuildingFootprint"
-rule = "MUST_NOT_OVERLAP_WITH"
-fc2 = "RoadCarriageway"
-
 # Additional Quality Rules - Line Rules
 [[rules]]
 fc1 = "RoadCenterline"

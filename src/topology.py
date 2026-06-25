@@ -1,5 +1,5 @@
 """
-Topology management for Topology Management System
+Topology management for Topology Validation System
 Handles topology creation and validation
 """
 

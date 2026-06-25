@@ -1,5 +1,5 @@
 """
-Configuration management for Topology Management System
+Configuration management for Topology Validation System
 Handles TOML configuration parsing and validation
 """
 

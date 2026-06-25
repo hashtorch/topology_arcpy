@@ -1,5 +1,5 @@
 """
-Duplicate feature removal for Topology Management System
+Duplicate feature removal for Topology Validation System
 Handles identification and removal of duplicate features
 """
 

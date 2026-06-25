@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 """
-Geodatabase operations for Topology Management System
-Handles flatten and restore operations
+Geodatabase operations for Topology Validation System
+Handles flatten, restore, and enumeration operations
 """
 
 import os
@@ -106,13 +107,14 @@ def flatten_gdb(input_gdb, output_gdb, dataset_name="Infrastructure"):
 
             # Check if feature class is empty
             fc_count = int(arcpy.GetCount_management(fc_path).getOutput(0))
-            total_features += fc_count
 
             if fc_count == 0:
                 empty_count += 1
-                logger.debug("Empty feature class: {}".format(fc_info))
+                logger.info("Skipping empty feature class: {}".format(fc_info))
+                continue  # Skip copying empty feature classes
 
-            logger.info("Moving feature class: {} ({} features)".format(fc_info, fc_count))
+            total_features += fc_count
+            logger.info("Copying feature class: {} ({} features)".format(fc_info, fc_count))
             arcpy.FeatureClassToFeatureClass_conversion(fc_path, target_dataset, fc_name)
             moved_count += 1
 
@@ -129,7 +131,7 @@ def flatten_gdb(input_gdb, output_gdb, dataset_name="Infrastructure"):
     print("Total feature classes found: {}".format(len(all_fcs)))
     print("Successfully moved: {}".format(moved_count))
     print("Failed: {}".format(failed_count))
-    print("Empty feature classes: {}".format(empty_count))
+    print("Empty feature classes skipped: {}".format(empty_count))
     print("Total features copied: {}".format(total_features))
 
     if failed_count > 0:
@@ -148,13 +150,14 @@ def flatten_gdb(input_gdb, output_gdb, dataset_name="Infrastructure"):
 
 
 @handle_arcpy_error
-def restore_gdb(flattened_gdb, output_gdb=None):
+def restore_gdb(flattened_gdb, output_gdb=None, template_gdb=None):
     """
     Restore original GDB structure from flattened GDB
 
     Args:
         flattened_gdb: Path to flattened GDB
         output_gdb: Path to output restored GDB (optional, defaults to original name)
+        template_gdb: Path to template GDB for empty feature classes (optional)
 
     Returns:
         str: Path to restored GDB
@@ -204,9 +207,15 @@ def restore_gdb(flattened_gdb, output_gdb=None):
                 fc_in_dataset = fc_list[0] if fc_list else None
 
                 if fc_in_dataset:
-                    fc_path = os.path.join('TKMDS', fc_in_dataset)
-                    spatial_ref = get_spatial_reference(fc_path)
-                    create_dataset_if_not_exists(output_gdb, dataset_name, spatial_ref)
+                    fc_path = os.path.join(flattened_gdb, 'TKMDS', fc_in_dataset)
+                    # Check if the feature class exists in flattened GDB
+                    if arcpy.Exists(fc_path):
+                        spatial_ref = get_spatial_reference(fc_path)
+                        create_dataset_if_not_exists(output_gdb, dataset_name, spatial_ref)
+                    else:
+                        # Use default spatial reference if FC doesn't exist
+                        logger.warning("Feature class {} not found in flattened GDB, using default spatial reference".format(fc_in_dataset))
+                        create_dataset_if_not_exists(output_gdb, dataset_name)
                 else:
                     create_dataset_if_not_exists(output_gdb, dataset_name)
 
@@ -214,13 +223,19 @@ def restore_gdb(flattened_gdb, output_gdb=None):
                 for fc_name in fc_list:
                     try:
                         source_fc = os.path.join(flattened_gdb, 'TKMDS', fc_name)
+
+                        # Check if source feature class exists in flattened GDB
+                        if not arcpy.Exists(source_fc):
+                            logger.debug("Skipping feature class {} (empty - will add from template if available)".format(fc_name))
+                            continue
+
                         target_dataset = os.path.join(output_gdb, dataset_name)
 
                         # Get feature count
                         fc_count = int(arcpy.GetCount_management(source_fc).getOutput(0))
                         total_features += fc_count
 
-                        logger.info("Restoring feature class: {} to {} ({} features)".format(fc_name, dataset_name, fc_count))
+                        logger.info("Copying feature class: {} to {} ({} features)".format(fc_name, dataset_name, fc_count))
                         arcpy.FeatureClassToFeatureClass_conversion(source_fc, target_dataset, fc_name)
                         restored_count += 1
 
@@ -237,13 +252,19 @@ def restore_gdb(flattened_gdb, output_gdb=None):
     for fc_name in original_structure.standalone_fcs:
         try:
             source_fc = os.path.join(flattened_gdb, 'TKMDS', fc_name)
+
+            # Check if source feature class exists in flattened GDB
+            if not arcpy.Exists(source_fc):
+                logger.debug("Skipping standalone feature class {} (empty - will add from template if available)".format(fc_name))
+                continue
+
             target_fc = os.path.join(output_gdb, fc_name)
 
             # Get feature count
             fc_count = int(arcpy.GetCount_management(source_fc).getOutput(0))
             total_features += fc_count
 
-            logger.info("Restoring standalone feature class: {} ({} features)".format(fc_name, fc_count))
+            logger.info("Copying standalone feature class: {} ({} features)".format(fc_name, fc_count))
             arcpy.FeatureClassToFeatureClass_conversion(source_fc, output_gdb, fc_name)
             restored_count += 1
 
@@ -270,6 +291,24 @@ def restore_gdb(flattened_gdb, output_gdb=None):
     print("="*50)
 
     logger.info("Restore complete. Restored {} feature classes".format(restored_count))
+
+    # Add missing empty feature classes from template
+    if template_gdb:
+        if not arcpy.Exists(template_gdb):
+            logger.warning("Template GDB not found: {}".format(template_gdb))
+        else:
+            logger.info("Adding empty feature classes from template: {}".format(template_gdb))
+            empty_added = add_empty_feature_classes_from_template(output_gdb, template_gdb, original_structure)
+
+            # Print empty FC addition summary
+            print("\n" + "="*50)
+            print("EMPTY FEATURE CLASS ADDITION SUMMARY")
+            print("="*50)
+            print("Empty feature classes added from template: {}".format(empty_added))
+            print("="*50)
+
+            logger.info("Added {} empty feature classes from template".format(empty_added))
+
     return output_gdb
 
 
@@ -397,3 +436,211 @@ def get_flattened_dataset_path(gdb_path, dataset_name="Infrastructure"):
         str: Path to dataset
     """
     return os.path.join(gdb_path, dataset_name)
+
+
+def add_empty_feature_classes_from_template(restored_gdb, template_gdb, original_structure):
+    """
+    Add empty feature classes from template GDB that are missing in restored GDB
+
+    Args:
+        restored_gdb: Path to restored GDB
+        template_gdb: Path to template GDB
+        original_structure: Original GDB structure
+
+    Returns:
+        int: Number of empty feature classes added
+    """
+    added_count = 0
+    failed_count = 0
+    failed_fcs = []
+
+    logger.info("Scanning template GDB for missing feature classes")
+
+    # Get all feature classes from template
+    arcpy.env.workspace = template_gdb
+    template_datasets = list_datasets(template_gdb)
+
+    # Collect all template feature classes by dataset
+    template_structure = {}
+    for dataset in template_datasets:
+        arcpy.env.workspace = os.path.join(template_gdb, dataset)
+        template_fcs = arcpy.ListFeatureClasses()
+        template_structure[dataset] = template_fcs
+
+    # Get standalone feature classes
+    arcpy.env.workspace = template_gdb
+    template_standalone = arcpy.ListFeatureClasses()
+    if template_standalone:
+        template_structure['(Standalone)'] = template_standalone
+
+    # Compare with restored structure and add missing ones
+    for dataset_name, template_fcs in template_structure.items():
+        for template_fc in template_fcs:
+            try:
+                # Determine target location
+                if dataset_name == '(Standalone)':
+                    target_fc_path = os.path.join(restored_gdb, template_fc)
+                else:
+                    # Check if dataset exists in original structure
+                    if dataset_name in original_structure.datasets:
+                        # Check if FC already exists in restored GDB
+                        target_fc_path = os.path.join(restored_gdb, dataset_name, template_fc)
+                        if arcpy.Exists(target_fc_path):
+                            continue  # Already exists, skip
+                    else:
+                        continue  # Dataset not in original structure, skip
+
+                # Get source FC path
+                if dataset_name == '(Standalone)':
+                    source_fc_path = os.path.join(template_gdb, template_fc)
+                else:
+                    source_fc_path = os.path.join(template_gdb, dataset_name, template_fc)
+
+                if not arcpy.Exists(source_fc_path):
+                    logger.warning("Template FC not found: {}".format(source_fc_path))
+                    continue
+
+                # Create empty feature class from template schema
+                if dataset_name == '(Standalone)':
+                    # Create standalone
+                    logger.info("Creating empty standalone FC: {}".format(template_fc))
+                    arcpy.FeatureClassToFeatureClass_conversion(source_fc_path, restored_gdb, template_fc)
+                else:
+                    # Create in dataset
+                    target_dataset = os.path.join(restored_gdb, dataset_name)
+                    if not arcpy.Exists(target_dataset):
+                        logger.warning("Dataset not found in restored GDB: {}".format(dataset_name))
+                        continue
+
+                    logger.info("Creating empty FC in {}: {}".format(dataset_name, template_fc))
+                    arcpy.FeatureClassToFeatureClass_conversion(source_fc_path, target_dataset, template_fc)
+
+                added_count += 1
+                logger.info("Created empty feature class: {} (0 features)".format(template_fc))
+
+            except arcpy.ExecuteError as e:
+                failed_count += 1
+                failed_fcs.append(dataset_name + '\\' + template_fc if dataset_name != '(Standalone)' else template_fc)
+                logger.error("Error creating empty feature class {}: {}".format(template_fc, str(e)))
+
+    if failed_count > 0:
+        logger.warning("Failed to create {}/{} empty feature classes".format(failed_count, len(template_fcs)))
+
+    return added_count
+
+
+@handle_arcpy_error
+def enumerate_gdb(gdb_path):
+    """
+    Enumerate and display comprehensive GDB summary
+
+    Args:
+        gdb_path: Path to geodatabase
+
+    Returns:
+        dict: GDB summary statistics
+    """
+    logger.info("Enumerating GDB: {}".format(gdb_path))
+    validate_gdb_path(gdb_path)
+
+    arcpy.env.workspace = gdb_path
+
+    # Get all datasets
+    datasets = list_datasets(gdb_path)
+
+    # Collect statistics
+    total_fcs = 0
+    total_features = 0
+    dataset_info = {}
+
+    for dataset in datasets:
+        dataset_path = os.path.join(gdb_path, dataset)
+        arcpy.env.workspace = dataset_path
+
+        fcs = arcpy.ListFeatureClasses()
+        fc_info = []
+
+        for fc in fcs:
+            fc_path = os.path.join(dataset_path, fc)
+            count = int(arcpy.GetCount_management(fc_path).getOutput(0))
+            desc = arcpy.Describe(fc_path)
+            geometry_type = desc.shapeType
+            spatial_ref = desc.spatialReference.name
+
+            fc_info.append({
+                'name': fc,
+                'count': count,
+                'geometry_type': geometry_type,
+                'spatial_reference': spatial_ref
+            })
+
+            total_fcs += 1
+            total_features += count
+
+        dataset_info[dataset] = {
+            'feature_classes': fc_info,
+            'total_fcs': len(fc_info),
+            'total_features': sum(item['count'] for item in fc_info)
+        }
+
+    # Check for standalone feature classes
+    arcpy.env.workspace = gdb_path
+    standalone_fcs = arcpy.ListFeatureClasses()
+
+    if standalone_fcs:
+        fc_info = []
+        for fc in standalone_fcs:
+            fc_path = os.path.join(gdb_path, fc)
+            count = int(arcpy.GetCount_management(fc_path).getOutput(0))
+            desc = arcpy.Describe(fc_path)
+            geometry_type = desc.shapeType
+            spatial_ref = desc.spatialReference.name
+
+            fc_info.append({
+                'name': fc,
+                'count': count,
+                'geometry_type': geometry_type,
+                'spatial_reference': spatial_ref
+            })
+
+            total_fcs += 1
+            total_features += count
+
+        dataset_info['(Standalone)'] = {
+            'feature_classes': fc_info,
+            'total_fcs': len(fc_info),
+            'total_features': sum(item['count'] for item in fc_info)
+        }
+
+    # Print formatted summary
+    print_enumeration_summary(gdb_path, dataset_info, total_fcs, total_features)
+
+    return {
+        'gdb_path': gdb_path,
+        'datasets': len(datasets),
+        'total_fcs': total_fcs,
+        'total_features': total_features,
+        'dataset_info': dataset_info
+    }
+
+
+def print_enumeration_summary(gdb_path, dataset_info, total_fcs, total_features):
+    """Print formatted enumeration summary"""
+    print("\n" + "="*60)
+    print("GDB ENUMERATION SUMMARY")
+    print("="*60)
+    print("GDB: {}".format(gdb_path))
+    print("Total Datasets: {}".format(len(dataset_info)))
+    print("Total Feature Classes: {}".format(total_fcs))
+    print("Total Features: {:,}".format(total_features))
+    print("\nDatasets:")
+
+    for dataset_name, info in dataset_info.items():
+        print("+-- {} ({} FCs, {:,} features)".format(
+            dataset_name, info['total_fcs'], info['total_features']))
+
+        for fc in info['feature_classes']:
+            print("    +-- {} ({}) - {:,} features".format(
+                fc['name'], fc['geometry_type'], fc['count']))
+
+    print("="*60)

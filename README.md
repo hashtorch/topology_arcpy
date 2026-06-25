@@ -1,13 +1,14 @@
-# Topology Management System
+# Topology Validation System
 
-A command-line tool for managing ArcGIS Desktop geodatabase topology operations using Python 2.7 and ArcPy.
+A command-line tool for validating ArcGIS Desktop geodatabase topology operations using Python 2.7 and ArcPy.
 
 ## Features
 
-- **Flatten**: Consolidate all feature classes from multiple datasets into a single dataset
+- **Flatten**: Consolidate all non-empty feature classes from multiple datasets into a single dataset
 - **Dedupe**: Remove duplicate features from geodatabases
 - **Validate**: Create and validate topology rules from configuration files
-- **Restore**: Restore original geodatabase structure from a flattened GDB
+- **Restore**: Restore original geodatabase structure from a flattened GDB, adding empty feature classes from template
+- **Enumerate**: Display comprehensive summary of geodatabase structure, datasets, feature classes, and feature counts
 
 ## Requirements
 
@@ -26,7 +27,7 @@ A command-line tool for managing ArcGIS Desktop geodatabase topology operations 
 ### Basic Commands
 
 ```bash
-# Step 1: Flatten GDB structure
+# Step 1: Flatten GDB structure (copies only non-empty feature classes)
 python main.py flatten --gdb input.gdb --output input_flattened.gdb
 
 # Step 2: Remove duplicate features from flattened GDB
@@ -36,8 +37,11 @@ python main.py dedupe --gdb input_flattened.gdb --feature-class BuildingFootprin
 # Step 3: Create and validate topology on cleaned data
 python main.py validate --gdb input_flattened.gdb --config topology.config.toml
 
-# Step 4: Restore original structure from cleaned, validated data
-python main.py restore --gdb input_flattened.gdb
+# Step 4: Restore original structure from cleaned, validated data (adds empty FCs from template)
+python main.py restore --gdb input_flattened.gdb --template res\Topo_2K_Schema_V2_08Apr26H1850.gdb
+
+# Step 5: Enumerate GDB to view structure summary
+python main.py enumerate --gdb input.gdb
 ```
 
 ### Command Options
@@ -46,6 +50,7 @@ python main.py restore --gdb input_flattened.gdb
 - `--output PATH`: Output geodatabase path (for flatten command)
 - `--dataset NAME`: Dataset name (default: TKMDS)
 - `--config PATH`: Configuration file path (default: topology.config.toml)
+- `--template PATH`: Template GDB path for empty feature classes (for restore command, default: res\Topo_2K_Schema_V2_08Apr26H1850.gdb)
 - `--feature-class`: Specific feature class to process (for dedupe command)
 - `--fields`: Comma-separated list of fields to check for duplicates (for dedupe command)
 - `--report-only`: Report duplicates without removing them (for dedupe command)
@@ -166,7 +171,7 @@ topology_arcpy/
 ### Complete Workflow (Recommended Order)
 
 ```bash
-# Step 1: Flatten GDB structure
+# Step 1: Flatten GDB structure (copies only non-empty feature classes)
 C:\Python27\ArcGIS10.8\python.exe main.py flatten --gdb D:\GDBs\C44B13F20.gdb
 
 # Step 2: Remove duplicates from flattened GDB
@@ -175,8 +180,11 @@ C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20_flatten
 # Step 3: Create and validate topology on cleaned data
 C:\Python27\ArcGIS10.8\python.exe main.py validate --gdb D:\GDBs\C44B13F20_flattened.gdb
 
-# Step 4: Restore original structure with cleaned, validated data
-C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb
+# Step 4: Restore original structure with cleaned, validated data (adds empty FCs from template)
+C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb --template res\Topo_2K_Schema_V2_08Apr26H1850.gdb
+
+# Step 5: Verify restored structure
+C:\Python27\ArcGIS10.8\python.exe main.py enumerate --gdb D:\GDBs\C44B13F20_restored.gdb
 ```
 
 ### Individual Commands
@@ -187,7 +195,17 @@ C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flatte
 C:\Python27\ArcGIS10.8\python.exe main.py flatten --gdb D:\GDBs\C44B13F20.gdb
 ```
 
-This creates `C44B13F20_flattened.gdb` with all 165 feature classes in the "TKMDS" dataset.
+This creates `C44B13F20_flattened.gdb` with only non-empty feature classes in the "TKMDS" dataset.
+
+#### Enumerate a Geodatabase
+
+```bash
+C:\Python27\ArcGIS10.8\python.exe main.py enumerate --gdb D:\GDBs\C44B13F20.gdb
+```
+
+This displays a comprehensive summary of the GDB structure including datasets, feature classes, and feature counts.
+
+#### Remove Duplicate Features
 
 #### Remove Duplicate Features
 
@@ -216,10 +234,23 @@ This creates topology rules from the configuration and validates them against th
 #### Restore Original Structure
 
 ```bash
-C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb
+C:\Python27\ArcGIS10.8\python.exe main.py restore --gdb D:\GDBs\C44B13F20_flattened.gdb --template res\Topo_2K_Schema_V2_08Apr26H1850.gdb
 ```
 
-This restores the original geodatabase structure with the cleaned and validated data.
+This restores the original geodatabase structure with the cleaned and validated data, adding any missing empty feature classes from the template GDB.
+
+#### Enumerate GDB Structure
+
+```bash
+# Show comprehensive GDB summary
+C:\Python27\ArcGIS10.8\python.exe main.py enumerate --gdb D:\GDBs\C44B13F20.gdb
+```
+
+This displays:
+- Total datasets and feature classes
+- Feature count per feature class
+- Geometry types and spatial references
+- Hierarchical tree view of GDB structure
 
 # Remove duplicates based on specific attribute fields
 C:\Python27\ArcGIS10.8\python.exe main.py dedupe --gdb D:\GDBs\C44B13F20.gdb --feature-class Parcels --fields "PARCEL_ID,OWNER"

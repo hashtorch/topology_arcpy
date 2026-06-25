@@ -1,4 +1,4 @@
-# Topology Management System Configuration File
+# Topology Validation System Configuration File
 # This file defines topology rules for geodatabase validation
 
 dataset_name = "TKMDS"

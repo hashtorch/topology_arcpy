@@ -1,5 +1,5 @@
 """
-Command Line Interface for Topology Management System
+Command Line Interface for Topology Validation System
 """
 
 import argparse
@@ -20,26 +20,28 @@ def parse_args():
         tuple: (command, args_dict) where command is str and args_dict is dict of arguments
     """
     parser = argparse.ArgumentParser(
-        description='Topology Management System for ArcGIS Desktop',
+        description='Topology Validation System for ArcGIS Desktop',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commands:
-  flatten    Flatten GDB structure (move all feature classes to single dataset)
-  restore    Restore original GDB structure from flattened GDB
+  flatten    Flatten GDB structure (move non-empty feature classes to single dataset)
+  restore    Restore original GDB structure from flattened GDB (adds empty FCs from template)
   validate   Create and validate topology from configuration
   dedupe     Remove duplicate features from geodatabase
+  enumerate  Display comprehensive GDB structure summary
 
 Examples:
   python main.py flatten
   python main.py restore
   python main.py validate
   python main.py dedupe
+  python main.py enumerate
         """
     )
 
     parser.add_argument(
         'command',
-        choices=['flatten', 'restore', 'validate', 'dedupe'],
+        choices=['flatten', 'restore', 'validate', 'dedupe', 'enumerate'],
         help='Command to execute'
     )
 
@@ -62,6 +64,11 @@ Examples:
     parser.add_argument(
         '--config',
         help='Path to configuration file (default: topology.config.toml)'
+    )
+
+    parser.add_argument(
+        '--template',
+        help='Template GDB path for empty feature classes (for restore command)'
     )
 
     parser.add_argument(
@@ -94,6 +101,7 @@ Examples:
         'output': args.output,
         'dataset': args.dataset,
         'config': args.config,
+        'template': args.template,
         'feature_class': args.feature_class,
         'fields': args.fields,
         'report_only': args.report_only,
@@ -161,6 +169,10 @@ def validate_args(command, args_dict):
             validated['fields'] = [f.strip() for f in validated['fields'].split(',')]
             logger.debug("Fields for duplicate checking: {}".format(validated['fields']))
 
+    elif command == 'enumerate':
+        if not validated['gdb']:
+            raise ValueError("--gdb argument required for enumerate command")
+
     return validated
 
 
@@ -196,21 +208,23 @@ def generate_flattened_name(gdb_path):
 
 def print_usage():
     """Print usage information"""
-    print("Topology Management System")
+    print("Topology Validation System")
     print("")
     print("Usage: python main.py <command> [options]")
     print("")
     print("Commands:")
-    print("  flatten    Flatten GDB structure")
-    print("  restore    Restore original GDB structure")
+    print("  flatten    Flatten GDB structure (non-empty FCs only)")
+    print("  restore    Restore original GDB structure (adds empty FCs from template)")
     print("  validate   Create and validate topology")
     print("  dedupe     Remove duplicate features")
+    print("  enumerate  Display GDB structure summary")
     print("")
     print("Options:")
     print("  --gdb PATH          Input GDB path")
     print("  --output PATH       Output GDB path (for flatten)")
-    print("  --dataset NAME      Dataset name (default: Infrastructure)")
+    print("  --dataset NAME      Dataset name (default: TKMDS)")
     print("  --config PATH       Config file path (default: topology.config.toml)")
+    print("  --template PATH     Template GDB path (for restore)")
     print("  --feature-class     Specific feature class (for dedupe)")
     print("  --fields            Comma-separated field list (for dedupe)")
     print("  --report-only       Report without removing (for dedupe)")
@@ -218,10 +232,10 @@ def print_usage():
     print("")
     print("Examples:")
     print("  python main.py flatten --gdb input.gdb --output output_flattened.gdb")
-    print("  python main.py restore --gdb output_flattened.gdb")
+    print("  python main.py restore --gdb output_flattened.gdb --template template.gdb")
     print("  python main.py validate --gdb input.gdb --config topology.config.toml")
-    print("  python main.py dedupe --gdb input.gdb --dataset Infrastructure")
-    print("  python main.py dedupe --gdb input.gdb --feature-class Parcels --report-only")
+    print("  python main.py dedupe --gdb input.gdb --dataset TKMDS")
+    print("  python main.py enumerate --gdb input.gdb")
 
 
 def parse_command_line():

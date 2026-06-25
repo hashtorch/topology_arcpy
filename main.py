@@ -1,6 +1,6 @@
 """
-Main entry point for Topology Management System
-Provides three commands: flatten, restore, validate
+Main entry point for Topology Validation System
+Provides five commands: flatten, restore, validate, dedupe, enumerate
 """
 
 import sys
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from src.logger import get_logger, setup_logging
 from src.cli import parse_command_line
 from src.config import load_config, validate_config
-from src.gdbops import flatten_gdb, restore_gdb
+from src.gdbops import flatten_gdb, restore_gdb, enumerate_gdb
 from src.topology import create_topology
 from src.dedupe import remove_duplicates, report_duplicates
 from src.utils import check_arcgis_license
@@ -28,7 +28,7 @@ def main():
         # Parse command line arguments
         command, args = parse_command_line()
 
-        logger.info("Topology Management System started")
+        logger.info("Topology Validation System started")
         logger.info("Command: {}".format(command))
 
         # Check ArcGIS license
@@ -43,6 +43,8 @@ def main():
             return handle_validate(args)
         elif command == 'dedupe':
             return handle_dedupe(args)
+        elif command == 'enumerate':
+            return handle_enumerate(args)
         else:
             logger.error("Unknown command: {}".format(command))
             return 1
@@ -93,9 +95,21 @@ def handle_restore(args):
     """
     logger.info("Executing restore command")
     logger.info("Flattened GDB: {}".format(args['gdb']))
+    logger.info("Template GDB: {}".format(args.get('template', 'Not specified')))
+
+    # Set default template if not provided
+    template_gdb = args.get('template')
+    if not template_gdb:
+        # Try default template path
+        import os
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        default_template = os.path.join(script_dir, 'res', 'Topo_2K_Schema_V2_08Apr26H1850.gdb')
+        if os.path.exists(default_template):
+            template_gdb = default_template
+            logger.info("Using default template: {}".format(template_gdb))
 
     # Execute restore operation
-    restored_path = restore_gdb(args['gdb'])
+    restored_path = restore_gdb(args['gdb'], template_gdb=template_gdb)
 
     logger.info("Restore completed successfully")
     logger.info("Restored GDB: {}".format(restored_path))
@@ -187,6 +201,29 @@ def handle_dedupe(args):
             logger.warning("Errors encountered: {}".format(len(results['errors'])))
             for error in results['errors']:
                 logger.warning("  - {}".format(error))
+
+    return 0
+
+
+def handle_enumerate(args):
+    """
+    Handle enumerate command
+
+    Args:
+        args: Parsed arguments dictionary
+
+    Returns:
+        int: Exit code (0 for success)
+    """
+    logger.info("Executing enumerate command")
+    logger.info("GDB: {}".format(args['gdb']))
+
+    # Execute enumeration
+    results = enumerate_gdb(args['gdb'])
+
+    logger.info("Enumeration complete")
+    logger.info("Found {} datasets with {} feature classes".format(
+        results['datasets'], results['total_fcs']))
 
     return 0
 

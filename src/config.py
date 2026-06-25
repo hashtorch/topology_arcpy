@@ -273,7 +273,7 @@ def validate_rule(rule):
             rule.rule_type, ', '.join(valid_rule_types)))
 
     # Some rule types require destination_fc
-    if rule.rule_type in ['MUST_BE_INSIDE', 'MUST_BE_COVERED_BY']:
+    if rule.rule_type in ['MUST_BE_INSIDE', 'MUST_BE_COVERED_BY', 'MUST_NOT_OVERLAP_WITH']:
         if not rule.destination_fc:
             raise ValueError("Rule type {} requires destination_fc".format(rule.rule_type))
 

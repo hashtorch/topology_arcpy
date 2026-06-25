@@ -45,3 +45,38 @@ rule = "MUST_NOT_HAVE_DANGLES"
 [[rules]]
 fc1 = "CompoundWall"
 rule = "MUST_NOT_HAVE_DANGLES"
+
+# Mandatory Cross-Layer Topology Rules - MUST_NOT_OVERLAP_WITH
+# NOTE: These rules are valid but fail with ArcGIS Desktop 10.8 due to compatibility issues
+# The rules are kept for documentation and future ArcGIS version compatibility
+# Area feature classes must not overlap with each other
+
+[[rules]]
+fc1 = "RoadCarriageway"
+fc2 = "BuildingFootprint"
+rule = "MUST_NOT_OVERLAP_WITH"
+
+[[rules]]
+fc1 = "RoadCarriageway"
+fc2 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+
+[[rules]]
+fc1 = "RoadCarriageway"
+fc2 = "BuiltUp"
+rule = "MUST_NOT_OVERLAP_WITH"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+fc2 = "BuiltUp"
+rule = "MUST_NOT_OVERLAP_WITH"
+
+[[rules]]
+fc1 = "BuildingFootprint"
+fc2 = "Woodland"
+rule = "MUST_NOT_OVERLAP_WITH"
+
+[[rules]]
+fc1 = "Woodland"
+fc2 = "BuiltUp"
+rule = "MUST_NOT_OVERLAP_WITH"

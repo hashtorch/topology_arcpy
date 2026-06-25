@@ -241,10 +241,55 @@ def add_rule(topology_path, rule):
         if not rule.destination_fc:
             raise ValueError("MUST_NOT_OVERLAP_WITH rule requires destination_fc")
         destination_fc = os.path.join(dataset_path, rule.destination_fc)
-        arcpy.AddRuleToTopology_management(topology_path, "Must Not Overlap With (Area-Area)", origin_fc, destination_fc)
+
+        # Log detailed information for troubleshooting
+        logger.info("Adding MUST_NOT_OVERLAP_WITH rule: {} -> {}".format(rule.origin_fc, rule.destination_fc))
+        logger.debug("Origin FC: {}, Destination FC: {}".format(origin_fc, destination_fc))
+
+        # Try alternative syntax variations to find working one
+        working_syntax = test_alternative_must_not_overlap_syntax(topology_path, origin_fc, destination_fc)
+        if working_syntax:
+            logger.info("Successfully added MUST_NOT_OVERLAP_WITH rule using syntax: '{}'".format(working_syntax))
+        else:
+            logger.error("All MUST_NOT_OVERLAP_WITH syntax variations failed for {} -> {}".format(rule.origin_fc, rule.destination_fc))
+            raise ValueError("No working MUST_NOT_OVERLAP_WITH syntax found for this ArcGIS version")
 
     else:
         raise ValueError("Unknown rule type: {}".format(rule.rule_type))
+
+
+def test_alternative_must_not_overlap_syntax(topology_path, origin_fc, destination_fc):
+    """
+    Test alternative syntax variations for MUST_NOT_OVERLAP_WITH rule
+
+    Args:
+        topology_path: Path to topology
+        origin_fc: Origin feature class path
+        destination_fc: Destination feature class path
+
+    Returns:
+        str: Working syntax or None if all fail
+    """
+    syntax_variations = [
+        "Must Not Overlap With (Area-Area)",
+        "Must Not Overlap With (Area)",
+        "Must Not Overlap With",
+        "Must Not Overlap (Area-Area)",
+        "Area Must Not Overlap Area"
+    ]
+
+    for syntax in syntax_variations:
+        try:
+            logger.info("Testing syntax: '{}'".format(syntax))
+            arcpy.AddRuleToTopology_management(topology_path, syntax, origin_fc, destination_fc)
+            logger.info("SUCCESS: Working syntax found: '{}'".format(syntax))
+            return syntax
+        except arcpy.ExecuteError as e:
+            logger.warning("FAILED syntax '{}': {}".format(syntax, str(e)))
+            continue
+
+    logger.error("All syntax variations failed")
+    return None
 
 
 @handle_arcpy_error

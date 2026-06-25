@@ -17,6 +17,10 @@ rule = "MUST_NOT_OVERLAP"
 fc1 = "BuildingFootprint"
 rule = "MUST_NOT_OVERLAP"
 
+[[rules]]
+fc1 = "BuiltUp"
+rule = "MUST_NOT_OVERLAP"
+
 # Additional Quality Rules - Line Rules
 [[rules]]
 fc1 = "RoadCenterline"

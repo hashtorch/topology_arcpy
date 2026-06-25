@@ -292,16 +292,35 @@ def get_topology_error_counts(topology_path):
         # Export topology errors
         error_fc_name = "topology_errors"
         error_fc = os.path.join(os.path.dirname(topology_path), error_fc_name)
-        if arcpy.Exists(error_fc):
-            arcpy.Delete_management(error_fc)
+
+        # Clean up any existing error files with various extensions
+        workspace = os.path.dirname(topology_path)
+        arcpy.env.workspace = workspace
+        arcpy.env.overwriteOutput = True
+
+        # Delete all possible error files
+        for fc in arcpy.ListFeatureClasses():
+            if fc.startswith(error_fc_name):
+                try:
+                    arcpy.Delete_management(fc)
+                except:
+                    pass
 
         arcpy.ExportTopologyErrors_management(topology_path, os.path.dirname(topology_path), error_fc_name)
 
-        # Count errors
-        if arcpy.Exists(error_fc):
-            count = int(arcpy.GetCount_management(error_fc).getOutput(0))
-            logger.info("Exported {} topology errors to {}".format(count, error_fc))
-            return {'total': count, 'exported': error_fc}
+        # Count errors from all error types
+        total_errors = 0
+        for fc in arcpy.ListFeatureClasses():
+            if fc.startswith(error_fc_name):
+                try:
+                    count = int(arcpy.GetCount_management(fc).getOutput(0))
+                    total_errors += count
+                except:
+                    pass
+
+        if total_errors > 0:
+            logger.info("Exported {} topology errors to {}".format(total_errors, error_fc_name))
+            return {'total': total_errors, 'exported': error_fc_name}
         else:
             return {'total': 0}
 
